@@ -1,12 +1,13 @@
 {
-  "name": "lunch-bot",
+  "name": "bot-lambda",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "zip": "zip -r bot.zip index.js node_modules ./src/*"
   },
-  "author": "",
+  "author": "plaid",
+  "license": "MIT",
   "dependencies": {
     "async": "2.1.4",
     "lodash": "4.17.2",
