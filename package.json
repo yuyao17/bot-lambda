@@ -1,0 +1,15 @@
+{
+  "name": "lunch-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "zip": "zip -r bot.zip index.js node_modules ./src/*"
+  },
+  "author": "",
+  "dependencies": {
+    "async": "2.1.4",
+    "lodash": "4.17.2",
+    "request": "2.79.0"
+  }
+}
