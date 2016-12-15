@@ -13,7 +13,7 @@ exports.event_send = (options, callback) => {
     },
 
     (channel, next) => {
-      text = '@here 一緒にランチに行く人募集ー！';
+      text = '@here 一緒にランチに行く人募集ー！:kuma-yolo:';
       slack.post_message(channel.id, text, (err, message) => {
         next(err, channel, message);
       });
@@ -44,7 +44,7 @@ exports.event_aggregate = (options, callback) => {
       reacted_members = _get_reacted_members(message);
 
       if(reacted_members.length === 0){
-        text = '誰も行かないんですね・・・。残念です。';
+        text = '誰も行かないんですね・・・。洗濯しよ。:kuma_nakami:';
         return slack.post_message(channel.id, text, (err, message) => {
           console.log('no one goes');
           return callback(err);
@@ -121,7 +121,7 @@ _make_groups = (reacted_members) => {
 }
 
 _generate_result_text = (groups) => {
-  text = 'ランチの組み合わせが決まったよ！';
+  text = 'ランチの組み合わせが決まったよ！:rikakkuma_turn:';
 
   counter = 0;
   _.forEach(groups, (group) => {
