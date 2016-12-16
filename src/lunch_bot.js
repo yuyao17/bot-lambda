@@ -4,12 +4,13 @@ const slack = require('./lib/slack');
 
 const CONFIG = require('./conf/config')
 const BOT_ID = CONFIG.BOT_ID
-const CHANNEL_NAME = CONFIG.CHANNEL_NAME
 
-exports.event_send = (options, callback) => {
+exports.event_invite = (options, callback) => {
+  channel_name = options.channel_name
+
   async.waterfall([
     (next) => {
-      slack.get_target_channel(CHANNEL_NAME, next);
+      slack.get_target_channel(channel_name, next);
     },
 
     (channel, next) => {
@@ -29,9 +30,11 @@ exports.event_send = (options, callback) => {
 }
 
 exports.event_aggregate = (options, callback) => {
+  channel_name = options.channel_name
+
   async.waterfall([
     (next) => {
-      slack.get_target_channel(CHANNEL_NAME, next);
+      slack.get_target_channel(channel_name, next);
     },
 
     (channel, next) => {
@@ -76,6 +79,26 @@ exports.event_aggregate = (options, callback) => {
     return callback(null);
   });
 }
+
+exports.event_chat = (options, callback) => {
+  channel_name = options.channel_name
+
+  async.waterfall([
+    (next) => {
+      slack.get_target_channel(channel_name, next);
+    },
+
+    (channel, next) => {
+      text = 'こんにちは！';
+      slack.post_message(channel.id, text, (err, message) => {
+        next(err, channel, message);
+      });
+    }
+  ], (err) => {
+    return callback(err)
+  });
+}
+
 
 _get_reacted_members = (message) => {
   res = []

@@ -1,7 +1,7 @@
 const handler = require('./src/handler');
 
 exports.run = (event, context, callback) => {
-  if(!event || !event.event_name){
+  if(!event || !event.event_name || !event.channel_name){
     return callback(new Error('invalid request'));
   }
 
