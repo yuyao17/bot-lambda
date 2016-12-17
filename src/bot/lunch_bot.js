@@ -1,28 +1,28 @@
 const async = require('async');
 const _ = require('lodash');
-const slack = require('./lib/slack');
+const slack = require('lib/slack');
 
-const CONFIG = require('./conf/config')
-const BOT_ID = CONFIG.BOT_ID
+const BOT_ID = CONFIG.LUNCH_BOT.BOT_ID
+const TOKEN = CONFIG.LUNCH_BOT.TOKEN
 
 exports.event_invite = (options, callback) => {
   channel_name = options.channel_name
 
   async.waterfall([
     (next) => {
-      slack.get_target_channel(channel_name, next);
+      slack.get_target_channel(TOKEN, channel_name, next);
     },
 
     (channel, next) => {
       text = '@here 一緒にランチに行く人募集ー！:kuma-yolo:';
-      slack.post_message(channel.id, text, (err, message) => {
+      slack.post_message(TOKEN, channel.id, text, (err, message) => {
         next(err, channel, message);
       });
     },
 
     (channel, message, next) => {
       reaction_names = ['hand', 'meat_on_bone', 'sushi', 'chikuwa'];
-      slack.add_reactions(channel.id, message.ts, reaction_names, next);
+      slack.add_reactions(TOKEN, channel.id, message.ts, reaction_names, next);
     }
   ], (err) => {
     return callback(err)
@@ -34,11 +34,11 @@ exports.event_aggregate = (options, callback) => {
 
   async.waterfall([
     (next) => {
-      slack.get_target_channel(channel_name, next);
+      slack.get_target_channel(TOKEN, channel_name, next);
     },
 
     (channel, next) => {
-      slack.get_latest_message(channel, BOT_ID, (err, message) => {
+      slack.get_latest_message(TOKEN, channel, BOT_ID, (err, message) => {
         next(err, channel, message);
       });
     },
@@ -48,7 +48,7 @@ exports.event_aggregate = (options, callback) => {
 
       if(reacted_members.length === 0){
         text = '誰も行かないんですね・・・。洗濯しよ。:kuma_nakami:';
-        return slack.post_message(channel.id, text, (err, message) => {
+        return slack.post_message(TOKEN, channel.id, text, (err, message) => {
           console.log('no one goes');
           return callback(err);
         });
@@ -58,7 +58,7 @@ exports.event_aggregate = (options, callback) => {
     },
 
     (channel, message, reacted_members, next) => {
-      slack.get_members_list( (err, members) => {
+      slack.get_members_list(TOKEN, (err, members) => {
         next(err, channel, message, reacted_members, members);
       });
     },
@@ -68,7 +68,7 @@ exports.event_aggregate = (options, callback) => {
       groups = _make_groups(reacted_member_names);
       text = _generate_result_text(groups);
 
-      slack.post_message(channel.id, text, (err, message) => {
+      slack.post_message(TOKEN, channel.id, text, (err, message) => {
         return callback(err);
       });
     }
@@ -85,12 +85,12 @@ exports.event_chat = (options, callback) => {
 
   async.waterfall([
     (next) => {
-      slack.get_target_channel(channel_name, next);
+      slack.get_target_channel(TOKEN, channel_name, next);
     },
 
     (channel, next) => {
       text = 'こんにちは！';
-      slack.post_message(channel.id, text, (err, message) => {
+      slack.post_message(TOKEN, channel.id, text, (err, message) => {
         next(err, channel, message);
       });
     }
