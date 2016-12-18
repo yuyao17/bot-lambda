@@ -1,19 +1,12 @@
 const request = require('request');
-const async = require('async');
-const _ = require('lodash');
-
-const CONFIG = require('../conf/config')
 
 _call_slack_api = (method_name, qs, callback) => {
-  _qs = _.extend({
-    token: CONFIG.TOKEN
-  }, qs);
 
-  options = {
+  var options = {
     uri: 'https://slack.com/api/' + method_name,
     method: 'GET',
     json: true,
-    qs: _qs
+    qs: qs
   };
 
   request(options, (err, response, body) => {
@@ -26,9 +19,10 @@ _call_slack_api = (method_name, qs, callback) => {
   });
 }
 
-exports.get_channels_list = (callback) => {
-  method = 'channels.list';
-  qs = {
+exports.get_channels_list = (token, callback) => {
+  var method = 'channels.list';
+  var qs = {
+    token: token,
     exclude_archived: 1
   };
   _call_slack_api(method, qs, (err, body) => {
@@ -39,9 +33,10 @@ exports.get_channels_list = (callback) => {
   });
 }
 
-exports.post_message = (channel_id, text, callback) => {
-  method = 'chat.postMessage';
-  qs = {
+exports.post_message = (token, channel_id, text, callback) => {
+  var method = 'chat.postMessage';
+  var qs = {
+    token: token,
     channel: channel_id,
     text: text,
     parse: 'full',
@@ -55,9 +50,10 @@ exports.post_message = (channel_id, text, callback) => {
   });
 }
 
-exports.get_channels_history = (channel_id, callback) => {
-  method = 'channels.history';
-  qs = {
+exports.get_channels_history = (token, channel_id, callback) => {
+  var method = 'channels.history';
+  var qs = {
+    token: token,
     channel: channel_id
   };
   _call_slack_api(method, qs, (err, body) => {
@@ -68,10 +64,11 @@ exports.get_channels_history = (channel_id, callback) => {
   });
 }
 
-exports.add_reactions = (channel_id, ts, reaction_names, callback) => {
+exports.add_reactions = (token, channel_id, ts, reaction_names, callback) => {
   async.each(reaction_names, (reaction_name, next) => {
-    method = 'reactions.add';
-    qs = {
+    var method = 'reactions.add';
+    var qs = {
+      token: token,
       name: reaction_name,
       channel: channel_id,
       timestamp: ts
@@ -83,9 +80,11 @@ exports.add_reactions = (channel_id, ts, reaction_names, callback) => {
 }
 
 
-exports.get_members_list = (callback) => {
-  method = 'users.list';
-  qs = {};
+exports.get_members_list = (token, callback) => {
+  var method = 'users.list';
+  var qs = {
+    token: token
+  };
   _call_slack_api(method, qs, (err, body) => {
     if(err){
       return callback(err);
@@ -94,15 +93,22 @@ exports.get_members_list = (callback) => {
   });
 }
 
-exports.get_target_channel = (channel_name, callback) => {
-  exports.get_channels_list( (err, channels) => {
+exports.get_target_channel = (token, channel_name, callback) => {
+  exports.get_channels_list(token, (err, channels) => {
     target_channel = _.find(channels, {name: channel_name});
     callback(null, target_channel);
   });
 }
 
-exports.get_latest_message = (channel, user, callback) => {
-  exports.get_channels_history(channel.id, (err, messages) => {
+exports.get_bot_messages = (token, channel, user, callback) => {
+  exports.get_channels_history(token, channel.id, (err, messages) => {
+    bot_messages = _.filter(messages, {user: user});
+    callback(null, bot_messages);
+  });
+}
+
+exports.get_latest_bot_message = (token, channel, user, callback) => {
+  exports.get_channels_history(token, channel.id, (err, messages) => {
     latest_message = _.find(messages, {user: user});
     callback(null, latest_message);
   });

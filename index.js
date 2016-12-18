@@ -1,20 +1,49 @@
-const handler = require('./src/handler');
+exports.run = (req, context, callback) => {
 
-exports.run = (event, context, callback) => {
-  if(!event || !event.event_name){
-    return callback(new Error('invalid request'));
+  console.log('start lambda');
+  console.log('req:' + JSON.stringify(req, undefined, 1));
+
+  _setup();
+
+  try {
+    _validate(req, context);
+    _authenticate(req);
+  } catch (err) {
+    console.error(err);
+    return callback(err);
   }
 
-  start_msg = 'start: [' + event.event_name + ']';
-  console.log(start_msg);
-
-  handler(event, context, (err) => {
+  const handler = require('handler');
+  handler(req, context, (err) => {
     if(err){
       return callback(err);
     }
 
-    end_msg = 'end: [' + event.event_name + ']';
-    console.log(end_msg);
     callback(null);
   });
+}
+
+_setup = () => {
+  process.env['NODE_PATH'] = __dirname + '/src'
+  require('module')._initPaths();
+  global.async = require('async');
+  global._ = require('lodash');
+  global.CONFIG = require('conf/config')
+}
+
+_validate = (req, context) => {
+  if(!req || !req.bot_name || !req.event_name || !req.channel_name){
+    throw new Error('invalid request');
+  }
+}
+
+_authenticate = (req) => {
+  // api経由の場合は認証を行う
+  if (req.from_api) {
+    if (req.bot_name === 'lunch_bot') {
+      if (req.token !== CONFIG.LUNCH_BOT.OUTGOING_TOKEN) {
+        throw new Error('authentication reject');
+      }
+    }
+  }
 }
