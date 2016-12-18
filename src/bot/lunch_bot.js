@@ -3,8 +3,10 @@ const slack = require('lib/slack');
 const BOT_ID = CONFIG.LUNCH_BOT.BOT_ID
 const TOKEN = CONFIG.LUNCH_BOT.TOKEN
 
+const inviteText = '一緒にランチに行く人募集ー！:kuma-yolo:'
+
 exports.event_invite = (options, callback) => {
-  channel_name = options.channel_name
+  channel_name = options.req.channel_name
 
   async.waterfall([
     (next) => {
@@ -12,14 +14,14 @@ exports.event_invite = (options, callback) => {
     },
 
     (channel, next) => {
-      text = '@here 一緒にランチに行く人募集ー！:kuma-yolo:';
+      var text = '@here ' + inviteText;
       slack.post_message(TOKEN, channel.id, text, (err, message) => {
         next(err, channel, message);
       });
     },
 
     (channel, message, next) => {
-      reaction_names = ['hand', 'meat_on_bone', 'sushi', 'chikuwa'];
+      var reaction_names = ['hand', 'meat_on_bone', 'sushi', 'chikuwa'];
       slack.add_reactions(TOKEN, channel.id, message.ts, reaction_names, next);
     }
   ], (err) => {
@@ -28,7 +30,7 @@ exports.event_invite = (options, callback) => {
 }
 
 exports.event_aggregate = (options, callback) => {
-  channel_name = options.channel_name
+  var channel_name = options.req.channel_name
 
   async.waterfall([
     (next) => {
@@ -36,18 +38,25 @@ exports.event_aggregate = (options, callback) => {
     },
 
     (channel, next) => {
-      slack.get_latest_message(TOKEN, channel, BOT_ID, (err, message) => {
-        next(err, channel, message);
+      slack.get_bot_messages(TOKEN, channel, BOT_ID, (err, bot_messages) => {
+        console.log(bot_messages);
+        inviteMessage = _.find(bot_messages, (message) => {
+          return message.text.match(inviteText);
+        });
+        next(err, channel, inviteMessage);
       });
     },
 
     (channel, message, next) => {
       reacted_members = _get_reacted_members(message);
 
-      if(reacted_members.length === 0){
-        text = '誰も行かないんですね・・・。洗濯しよ。:kuma_nakami:';
+      if (reacted_members.length <= 2) {
+        if (reacted_members.length === 0) {
+          var text = '誰も行かないんですね・・・。洗濯しよ。:kuma_nakami:';
+        } else {
+          var text = '人数が集まらなかったので中止です・・・。洗濯しよ。:kuma_nakami:';
+        }
         return slack.post_message(TOKEN, channel.id, text, (err, message) => {
-          console.log('no one goes');
           return callback(err);
         });
       } else {
@@ -62,9 +71,9 @@ exports.event_aggregate = (options, callback) => {
     },
 
     (channel, message, reacted_members, members, next) => {
-      reacted_member_names = _convert_to_name(reacted_members, members);
-      groups = _make_groups(reacted_member_names);
-      text = _generate_result_text(groups);
+      var reacted_member_names = _convert_to_name(reacted_members, members);
+      var groups = _make_groups(reacted_member_names);
+      var text = _generate_result_text(groups);
 
       slack.post_message(TOKEN, channel.id, text, (err, message) => {
         return callback(err);
@@ -79,27 +88,21 @@ exports.event_aggregate = (options, callback) => {
 }
 
 exports.event_chat = (options, callback) => {
-  channel_name = options.channel_name
+  var channel_id = options.req.channel_id
+  var from_user_name = options.req.user_name
+  var text = options.req.text
+  var trigger_word = options.req.trigger_word
 
-  async.waterfall([
-    (next) => {
-      slack.get_target_channel(TOKEN, channel_name, next);
-    },
+  var reply = _generate_reply(from_user_name, text, trigger_word);
 
-    (channel, next) => {
-      text = 'こんにちは！';
-      slack.post_message(TOKEN, channel.id, text, (err, message) => {
-        next(err, channel, message);
-      });
-    }
-  ], (err) => {
-    return callback(err)
+  slack.post_message(TOKEN, channel_id, reply, (err, message) => {
+    callback(err);
   });
 }
 
 
 _get_reacted_members = (message) => {
-  res = []
+  var res = []
   _.forEach(message.reactions, (reaction) => {
     res = res.concat(reaction.users);
   });
@@ -113,14 +116,14 @@ _convert_to_name = (reacted_members, members) => {
 }
 
 _make_groups = (reacted_members) => {
-  groups = [];
+  var groups = [];
 
   if (reacted_members.length >= 12) {
-    group_num = Math.floor(reacted_members.length / 4);
+    var group_num = Math.floor(reacted_members.length / 4);
   } else if (reacted_members.length >= 7) {
-    group_num = 2;
+    var group_num = 2;
   } else {
-    group_num = 1;
+    var group_num = 1;
   }
 
   for (var i=0 ; i<group_num ; i++){
@@ -129,7 +132,7 @@ _make_groups = (reacted_members) => {
 
   reacted_members = _.shuffle(reacted_members);
 
-  counter = 0;
+  var counter = 0;
   _.forEach(reacted_members, (member) => {
     groups[counter].push(member);
     counter++;
@@ -142,12 +145,12 @@ _make_groups = (reacted_members) => {
 }
 
 _generate_result_text = (groups) => {
-  text = 'ランチの組み合わせが決まったよ！:rikakkuma_turn:';
+  var text = 'ランチの組み合わせが決まったよ！:rikakkuma_turn:';
 
-  counter = 0;
+  var counter = 0;
   _.forEach(groups, (group) => {
     counter++;
-    line = '\n' + counter + 'グループ:';
+    var line = '\n' + counter + 'グループ:';
     _.forEach(group, (name) => {
       line = line + ' @' + name;
     });
@@ -155,4 +158,43 @@ _generate_result_text = (groups) => {
   });
 
   return text;
+}
+
+_generate_reply = (from_user_name, text, trigger_word) => {
+  // text = _.replace(text, trigger_word, '');
+  text = decodeURI(text);
+  var reply = '';
+
+  if (text.match("(おすすめ|オススメ|店|どこ)")) {
+    if (_.random(0, 4) === 0) {
+      reply = 'んー？今日は `アトレ` でいいんじゃないー？'
+    } else {
+      restaurant = _select_restaurant();
+      emoji = typeof restaurant.emoji !== "undefined" ? restaurant.emoji : '';
+      // reply = 'オススメはここくま！' + emoji + '\n';
+      // reply = reply + restaurant.name + '\n';
+      reply = 'オススメは `' + restaurant.name + '` くま！' + emoji + '\n';
+      reply = reply + restaurant.tabelog;
+    }
+  }
+
+  if (!reply) {
+    var rand = _.random(0, 2);
+    if (rand == 0) {
+      reply = "こんにちは！";
+    } else if (rand == 1) {
+      reply = "そういうのは大吉さんが得意くま。";
+    } else {
+      reply = "お腹すいたくま！";
+    }
+  }
+
+  return reply;
+}
+
+_select_restaurant = () => {
+  const restaurant_list = require('./restaurant_list');
+
+  var rand = _.random(0, restaurant_list.length - 1);
+  return restaurant_list[rand];
 }

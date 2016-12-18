@@ -1,9 +1,9 @@
 module.exports = (req, context, callback) => {
-  bot_name = req.bot_name
-  event_name = req.event_name
+  var bot_name = req.bot_name
+  var event_name = req.event_name
 
-  options = {};
-  options.channel_name = req.channel_name;
+  var options = {};
+  options.req = req;
 
   switch (bot_name){
     case 'lunch_bot':
@@ -31,7 +31,7 @@ module.exports = (req, context, callback) => {
       break;
   }
 
-  log = ': [' + bot_name + '] [' + event_name + ']';
+  var log = ': [' + bot_name + '] [' + event_name + ']';
   console.log('start' + log);
 
   event(options, (err) => {

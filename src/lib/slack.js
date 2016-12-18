@@ -2,7 +2,7 @@ const request = require('request');
 
 _call_slack_api = (method_name, qs, callback) => {
 
-  options = {
+  var options = {
     uri: 'https://slack.com/api/' + method_name,
     method: 'GET',
     json: true,
@@ -20,8 +20,8 @@ _call_slack_api = (method_name, qs, callback) => {
 }
 
 exports.get_channels_list = (token, callback) => {
-  method = 'channels.list';
-  qs = {
+  var method = 'channels.list';
+  var qs = {
     token: token,
     exclude_archived: 1
   };
@@ -34,8 +34,8 @@ exports.get_channels_list = (token, callback) => {
 }
 
 exports.post_message = (token, channel_id, text, callback) => {
-  method = 'chat.postMessage';
-  qs = {
+  var method = 'chat.postMessage';
+  var qs = {
     token: token,
     channel: channel_id,
     text: text,
@@ -51,8 +51,8 @@ exports.post_message = (token, channel_id, text, callback) => {
 }
 
 exports.get_channels_history = (token, channel_id, callback) => {
-  method = 'channels.history';
-  qs = {
+  var method = 'channels.history';
+  var qs = {
     token: token,
     channel: channel_id
   };
@@ -66,8 +66,8 @@ exports.get_channels_history = (token, channel_id, callback) => {
 
 exports.add_reactions = (token, channel_id, ts, reaction_names, callback) => {
   async.each(reaction_names, (reaction_name, next) => {
-    method = 'reactions.add';
-    qs = {
+    var method = 'reactions.add';
+    var qs = {
       token: token,
       name: reaction_name,
       channel: channel_id,
@@ -81,8 +81,8 @@ exports.add_reactions = (token, channel_id, ts, reaction_names, callback) => {
 
 
 exports.get_members_list = (token, callback) => {
-  method = 'users.list';
-  qs = {
+  var method = 'users.list';
+  var qs = {
     token: token
   };
   _call_slack_api(method, qs, (err, body) => {
@@ -100,7 +100,14 @@ exports.get_target_channel = (token, channel_name, callback) => {
   });
 }
 
-exports.get_latest_message = (token, channel, user, callback) => {
+exports.get_bot_messages = (token, channel, user, callback) => {
+  exports.get_channels_history(token, channel.id, (err, messages) => {
+    bot_messages = _.filter(messages, {user: user});
+    callback(null, bot_messages);
+  });
+}
+
+exports.get_latest_bot_message = (token, channel, user, callback) => {
   exports.get_channels_history(token, channel.id, (err, messages) => {
     latest_message = _.find(messages, {user: user});
     callback(null, latest_message);
