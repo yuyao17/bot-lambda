@@ -1,5 +1,3 @@
-const async = require('async');
-const _ = require('lodash');
 const slack = require('lib/slack');
 
 const BOT_ID = CONFIG.LUNCH_BOT.BOT_ID

@@ -1,22 +1,42 @@
-exports.run = (event, context, callback) => {
-  if(!event || !event.event_name || !event.channel_name || !event.bot_name){
-    return callback(new Error('invalid request'));
+exports.run = (req, context, callback) => {
+
+  console.log('start lambda');
+  console.log('req:' + JSON.stringify(req, undefined, 1));
+
+  errMsg = _validate(req, context);
+  if(errMsg){
+    console.error(errMsg);
+    // console.error('req:' + JSON.stringify(req, undefined, 1));
+    // console.error('context:' + JSON.stringify(context, undefined, 1));
+    return callback(new Error(errMsg));
   }
 
-  process.env['NODE_PATH'] = __dirname + '/src'
-  require('module')._initPaths();
-  global.CONFIG = require('conf/config')
-
-  log = ': [' + event.bot_name + '] [' + event.event_name + ']';
-  console.log('start' + log);
+  _setup();
 
   const handler = require('handler');
-  handler(event, context, (err) => {
+  handler(req, context, (err) => {
     if(err){
+      // console.error('req:' + JSON.stringify(req, undefined, 1));
+      // console.error('context:' + JSON.stringify(context, undefined, 1));
       return callback(err);
     }
 
-    console.log('end' + log);
     callback(null);
   });
+}
+
+_validate = (req, context) => {
+  errMsg = null;
+  if(!req || !req.bot_name || !req.event_name || !req.channel_name){
+    errMsg = 'invalid request';
+  }
+  return errMsg;
+}
+
+_setup = () => {
+  process.env['NODE_PATH'] = __dirname + '/src'
+  require('module')._initPaths();
+  global.async = require('async');
+  global._ = require('lodash');
+  global.CONFIG = require('conf/config')
 }

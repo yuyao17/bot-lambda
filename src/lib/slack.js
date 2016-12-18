@@ -1,6 +1,4 @@
 const request = require('request');
-const async = require('async');
-const _ = require('lodash');
 
 _call_slack_api = (method_name, qs, callback) => {
 
